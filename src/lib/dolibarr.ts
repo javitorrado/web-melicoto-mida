@@ -49,7 +49,10 @@ const MOCK_PRODUCTS: Omit<DolibarrProduct, "slug" | "priceTTC" | "status" | "cat
   },
 ];
 
-async function fetchFromDolibarr<T>(endpoint: string): Promise<T> {
+export async function fetchFromDolibarr<T>(
+  endpoint: string,
+  options?: { method?: string; body?: string }
+): Promise<T> {
   const baseUrl = process.env.DOLIBARR_API_URL;
   const apiKey = process.env.DOLIBARR_API_KEY;
 
@@ -58,10 +61,13 @@ async function fetchFromDolibarr<T>(endpoint: string): Promise<T> {
   }
 
   const res = await fetch(`${baseUrl}${endpoint}`, {
+    method: options?.method || "GET",
     headers: {
       DOLAPIKEY: apiKey,
       Accept: "application/json",
+      ...(options?.body && { "Content-Type": "application/json" }),
     },
+    body: options?.body,
   });
 
   if (!res.ok) {

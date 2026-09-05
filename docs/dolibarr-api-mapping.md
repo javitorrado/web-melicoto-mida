@@ -49,30 +49,78 @@ Actualment **NO existeix** l'usuari `api_melicoto_web` ni una clau API associada
 
 ---
 
-## Endpoints previstos (Dolibarr API)
+## Endpoints confirmats (Dolibarr API)
 
 ### Lectura de productes
 
 **GET** `/api/index.php/products`  
-Retorna llistat de productes amb preus i estocs.
+Retorna llistat de productes amb preus i estocs (limit=500).
 
 **GET** `/api/index.php/products/{id}`  
 Fitxa completa d'un producte.
 
-### Lectura d'estocs
+### Creació de terceres (clientes)
 
-**GET** `/api/index.php/stocks`  
-Estocs per producte/almacén.
+**POST** `/api/index.php/thirdparties`  
+Crear nou client.
 
-### Lectura de terceres
+**Camps mínims requerits:**
+- `name` (nom empresa/client) — obligatori
+- `client: 1` (flag per marcar com a client)
 
-**GET** `/api/index.php/thirdparties`  
-Clients registrats.
+**Camps opcionals:**
+- `email`
+- `phone`
+- `address`
+- `zip` (codi postal)
+- `town` (ciutat)
+- `country_code` (ISO 2-letter, ex: "ES")
+
+**Retorna:** `{ id, ref, ... }` (amb el `id` del thirdparty nou)
 
 ### Creació de comandes
 
 **POST** `/api/index.php/orders`  
-Crear nova comanda.
+Crear nova comanda en estat esborrany (draft).
+
+**Camps mínims requerits:**
+- `socid` — ID del thirdparty (client)
+
+**Camps opcionals:**
+- `date` — unix timestamp (si no es passa, usa la data actual)
+- `ref_client` — referència del client
+- `mode_reglement_id` — mètode de pagament
+
+**Nota important:** La comanda es crea sempre en esborrany (`status=0`, `brouillon=1`). **Queda sense validar** fins que es cridi l'endpoint `POST /orders/{id}/validate`. Això evita que trigui processos automàtics d'expedició fins que es confirmi pagament.
+
+**Retorna:** `{ id, ref, ... }`
+
+### Afegir línies a comanda
+
+**POST** `/api/index.php/orders/{id}/lines`  
+Afegir línia de comanda.
+
+**Camps:**
+- `fk_product` — ID del producte
+- `qty` — quantitat
+- `subprice` — preu unitari HT (sense IVA)
+- `product_type` — 0 = producte, 1 = servei
+- `tva_tx` — percentatge IVA (ex: 21)
+- `desc` — descripció (opcional, per override)
+- `pa_ht` — preu de cost (opcional)
+
+**Nota:** Per línies de servei com "Enviament", passar `product_type: 1` i sol·licita descripció.
+
+**Retorna:** `{ id, rowid, ... }`
+
+### Validar comanda
+
+**POST** `/api/index.php/orders/{id}/validate`  
+Moure comanda de draft a validated (dispara triggers, inicia flux de preparació).
+
+**No requereix paràmetres additionals.** Nota: **Fora del scope fase 2** (s'implementarà quan es confirmi pagament via CECA).
+
+### Lectura de comandes
 
 **GET** `/api/index.php/orders/{id}`  
 Detall de comanda.
@@ -168,8 +216,38 @@ Per fase 1, usem cache en memòria (simple). Prou fins que no hi hagi trànsit p
 - **ISR (Incremental Static Regeneration)** de Next.js per a pàgines estàtiques
 - **Cache Headers HTTP** (`Cache-Control: public, max-age=120`) per a navegador + CDN
 
+## Decisió: API genèrica REST vs. `woodolisyncapi` custom
+
+**Data:** 2026-09-06
+
+Vaig investigar l'endpoint `/woodolisyncapi/postOrder` (integració WooCommerce) però el vaig **descartar**:
+
+- **Acoblament fort:** Requereix `shop_id`, configuració global `WOODOLISYNC_IO_CONFIG_ORDERS`, i permisos específics del mòdul WoodolisSync
+- **Risc de producció:** Usar-lo podria interferir amb la sincronització WooCommerce existentment en viu
+- **Decisió final:** Usar l'API REST genèrica (`/thirdparties`, `/orders`, `/orders/{id}/lines`), que és desacoblada i més segura
+
+## Limitació: Estoc no-atòmic
+
+**Descoberta:** Dolibarr NO decrementa estoc en crear comanda, sinó **només en validar l'expedició**.
+
+**Implementació fase 2:**
+- Al momento de `/api/checkout`: revalidem estoc contra la BD en viu (via `getProducts()`)
+- Si hi ha discrepància (qty demanada > stock actual): retornem 400 i informem l'usuari
+- **Limitació docmentada:** No hi ha reserva atòmica per entre checks i creació — race condition possible si dos clients compren simultàneament l'últim producte
+- **Acceptable avui:** L'entorn és de proves (no trànsit públic). Quan escali a producció, considerar queue de comandes + background job per reserva real
+
+## Limitació: Deduplicació de thirdparties
+
+**Descoberta:** L'API `POST /thirdparties` no fa merge automàtic per email/NIF repetit.
+
+**Implementació actual:** Creem un thirdparty nou cada vegada (even si ja existeix client amb el mateix email).
+
+**Acceptable avui:** Per fase 2 (poc trànsit). Fase futura: cerca per email via `GET /thirdparties?email=...` i reusa l'existent, o usa el custom endpoint `createOrFetchThirdpartyFromGuest()` del mòdul WoodolisSync (però amb risc d'interferència).
+
 ---
 
-**Última actualització:** 2026-09-05  
-**Responsable sessió:** Claude Sonnet 5  
-**Següent:** validar endpoints en viu quan es crei l'usuari API
+**Última actualització:** 2026-09-06  
+**Fase completada:** Carret + Checkout (fase 2 part 2)  
+**Pàgines noves:** `/carret`, `/checkout`, `/comanda-confirmada`  
+**Endpoints nous:** `POST /api/checkout`  
+**Següent:** integració CECA (pagament real — fase 3)
