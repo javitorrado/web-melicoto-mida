@@ -2,10 +2,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap");
 
 :root {
-  /* Primaris */
-  --color-primary: #0ea5e9;
-  --color-primary-light: #e0f2fe;
-  --color-primary-dark: #0369a1;
+  /* Primaris — Verd Melicotó */
+  --color-primary: #4CAF50;
+  --color-primary-light: #e0f2e9;
+  --color-primary-dark: #3d8b41;
 
   /* Accents */
   --color-accent-coral: #ff6b6b;

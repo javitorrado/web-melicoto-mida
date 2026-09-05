@@ -2,18 +2,18 @@
 // Font única de colors per a tota l'aplicació
 
 export const colors = {
-  // Primaris — Identitat Melicotó
+  // Primaris — Verd Melicotó (bottons, accents)
   primary: {
-    50: "#f0f9ff",
-    100: "#e0f2fe",
-    200: "#bae6fd",
-    300: "#7dd3fc",
-    400: "#38bdf8",
-    500: "#0ea5e9", // Azul principal (Melicotó)
-    600: "#0284c7",
-    700: "#0369a1",
-    800: "#075985",
-    900: "#0c3d66",
+    50: "#f1f8f5",
+    100: "#e0f2e9",
+    200: "#c3e6d7",
+    300: "#a5d9c4",
+    400: "#7acfb1",
+    500: "#4CAF50", // Verd principal (Melicotó)
+    600: "#45a049",
+    700: "#3d8b41",
+    800: "#356d39",
+    900: "#2d5a31",
   },
 
   // Accents calents — Colors secundaris
