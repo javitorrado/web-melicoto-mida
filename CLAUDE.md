@@ -279,28 +279,57 @@ Afegir conforme necessitem:
 
 ---
 
-## 12. Sessió actual — accions
+## 12. Sesiones completadas
 
-**Data:** 2026-09-05 — **COMPLETADA**
+### Sessió 1 — 2026-09-05 (FASE 1: Proves de concepte)
 
 1. ✅ Verificar estructura WEB-MELICOTO-MIDA (repo git existent, CLAUDE.md i docs/ presents)
 2. ✅ Documentar mapa d'URLs actuals de WooCommerce — completat a `docs/urls-mapping.md`
-3. ⏸️ Verificar API REST de Dolibarr + endpoints — PENDENT credencials (usuari escopat no creat)
+3. ✅ Crear usuari API escopat a Dolibarr (`api_melicoto_web`) — clau generada
 4. ✅ Montar scaffold Next.js inicial — App Router + TypeScript
 5. ✅ Primer endpoint de backend: `GET /api/products` amb cache (90s default)
 6. ✅ Pàgines category + product detail (mock mode)
 7. ✅ Setup robots.txt + middleware X-Robots-Tag noindex
-8. ✅ .env.local.example template
+8. ✅ .env.local.example template + credencials API live
 9. ✅ Documentació `docs/dolibarr-api-mapping.md` (amb instruccions crear usuari API)
 10. ✅ README.md amb setup + estructura
+11. ✅ Deploy a Vercel (auto-deploy en push a main)
 
-### Propers passos per sessió següent
+### Sessió 2 — 2026-09-06 (FASE 2 PART 1: Categories + Navegació)
 
-1. **Crear usuari API escopat** a Dolibarr (`api_melicoto_web`) — requereix accés al backend
-2. **Validar endpoints** reals de Dolibarr: testjar `GET /api/products` en viu
-3. **Documentar limitacions** al `docs/dolibarr-api-mapping.md` conforme descobrim
-4. **Implementar pàgines de categoria/subcategoria** amb filtres (per ara mock llistat complet)
-5. **Implementar cistella + checkout** (fase 2)
+1. ✅ Investigar model de dades Dolibarr + mòdul WoodolisSync en viu:
+   - Categories són nativas (`llx_categorie`, jerarquia `fk_parent`)
+   - Variants són productes separats (`variable`/`variation`, enllaçat per `parentProductId`)
+   - Talla extreta del sufix del `label` (camp `options_woodolisync_talla` sovint null)
+   - Tags NO accessibles via API REST (taules pròpies sin endpoint)
+
+2. ✅ Estendre `src/lib/dolibarr.ts`:
+   - `DolibarrCategory` i ampliació `DolibarrProduct` amb tots els camps reals
+   - `getCategories()`, `getTopCategories()`, `getCategoryBySlug()`, `getSubcategories()`
+   - `getProductsByCategory(categoryId)` — agrupa variants sota pare
+   - `getProductBySlug()` — resol per categoria + slug
+   - `slugify()` helper
+
+3. ✅ Reescriure pàgines:
+   - `/shop/categoria-producte/[slug]` — mostra subcategories reals + productes de categoria
+   - `/shop/categoria-producte/[slug]/[subslug]` — llistat productes subcategoria (nova)
+   - `/productes/[...slug]` — detecta variants (si `variable`), mostra selector talles amb estoc individual
+   - `/` — menú de les 7 categories principals
+
+4. ✅ Documentar a `docs/dolibarr-api-mapping.md`: endpoints confirmats, limtacions descobertes (tags, slug de producte)
+
+5. ✅ Build succeeds, TypeScript check passes
+
+6. ✅ Commit + push (auto-deploy Vercel)
+
+### Pròxims passos per sessió 3
+
+1. **Cistella (carret)** — estat en client (localStorage) o servidor (sessionStorage)
+2. **Checkout** — formulari dades client, validació enviament
+3. **Passarel·la de pagament** — decisió Redsys vs Stripe + integració
+4. **Blog + pàgines estàtiques** — BD pròpia, editor senzill
+5. **Imatges de producte** — endpoint documents de Dolibarr (més complex)
+6. **Tags/filtres transversals** — query SQL custom (fora d'API REST)
 
 ---
 
@@ -324,8 +353,6 @@ Afegir conforme necessitem:
 
 ## Historial de decisions
 
-*Afegir entries aquí conforme prenem decisions importants.*
-
 ### 2026-09-05 — Arquitectura inicial
 
 **Decisió:** Next.js + API intermèdia + Dolibarr font única.
@@ -334,9 +361,19 @@ Afegir conforme necessitem:
 
 **Trade-offs:**
 - Més complex que un "sync per cron cada X minuts" — però menys risc de desincronitzacions
-- Cal desenvolupa una capa d'API nova — però rep punts de cost/temps amb SaaS de botiga estàndard (Shopify, Prestashop)
-- Redsys/Stripe adds complexity de seguretat — però és l'estàndard indústria i a la llarga més segur
+- Cal desenvolupar una capa d'API nova — però rep punts de cost/temps amb SaaS de botiga estàndard (Shopify, Prestashop)
+- Redsys/Stripe afegeix complexity de seguretat — però és l'estàndard indústria i a la llarga més segur
+
+### 2026-09-06 — Model de dades: Variants, Categories, Tags
+
+**Decisió:** Per a variants (talles), crear per cada mida un producte Dolibarr SEPARAT (no sub-records), allotjats en el mateix `fk_category` que el pare.
+
+**Per què:** Dolibarr i WoodolisSync ja fan aquest model (cada talla = producte propi ref, propi stock). Matching això amb la estructura real simplifica integració, evita transformacions complexes, reutilitza endpoints natives (`/categories/{id}/objects?type=product`).
+
+**Workaround — Talla extreta del label:** Camp `options_woodolisync_talla` sovint `null`. Extreure talla del sufix del `label` (ex: "Pijama ... - M" → "M").
+
+**Limitació — Tags de WooCommerce:** No accessibles via API REST. Viuen en taules pròpies (`llx_melicoto_product_tags`) sense endpoint oficial. **PENDENT fase futura:** endpoint custom o query SQL.
 
 ---
 
-*Última actualització: 2026-09-05*
+*Última actualització: 2026-09-06 — Fase 2 part 1 completada. Següent: cistella + checkout (fase 2 part 2).*
