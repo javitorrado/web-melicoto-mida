@@ -79,16 +79,47 @@ Detall de comanda.
 
 ---
 
-## Limitacions descobertes (a omplir conforme testem)
+## Limitacions descobertes (fase 2 — investigació en viu)
 
-*Secció pendent — es documentaran aquí quan provem en viu contra Dolibarr.*
+**Data:** 2026-09-06 (durant fase 2)
 
-- Paginació (endpoints retornen tots els registres, o paginen per defecte?)
-- Filtres disponibles (`GET /products?limit=50&sortfield=ref`)
-- Format de dades retornades (camp de preus, estoc, variants)
-- Autenticació API Key (capçalera `DOLAPIKEY`, o altre?)
-- Rate limiting (si n'hi ha)
-- Endpoints per variants de producte (talles, colors)
+### Categories (confirmades en viu)
+- **Endpoint:** `GET /api/index.php/categories` — retorna totes les categories sense paginar (limit=200+)
+- **Jerarquia:** via `fk_parent` (arrel = 1 "Raiz www.melicoto.com")
+- **Slug:** a `array_options.options_woodolisync_slug` (ex: "textil", "camisetes")
+- **Filtratge:** categories principals (7 úniques) diferenciades per slug dins `fk_parent=1`: `textil`, `complements`, `ca-nostra`, `cuina`, `artesania`, `papereria`, `infantil`. Categories com "sense-categoria", "embolicat" són brossa de WooCommerce, descartar.
+- **Per-category products:** `GET /api/index.php/categories/{id}/objects?type=product` — retorna tota la categoria en UNA crida (no cal N+1). Verificat: categoria "Tèxtil" (id=30) retorna 23 productes.
+
+### Productes (confirmades en viu)
+- **Slug natural:** productes NO tenen `url` (sempre `null`). Cal generar via `slugify(label)` (ex: "Camiseta Rissaga" → "camiseta-rissaga").
+- **Variants (talles):** cada variant és una product row separada (propi `ref`, propi `stock`). Distingits per `array_options.options_woodolisync_product_type`:
+  - `"variable"` — producte pare (ex. "Pijama d'hivern de dona \"Tot marxa\"")
+  - `"variation"` — producte fill/variant (ex. fill amb "- M" al sufix del label)
+  - Enllaç: `array_options.options_woodolisync_parent_product` (int) = `id` del pare
+  - Camp `options_woodolisync_talla` sovint `null` — extreure talla del sufix del label ("... - M" → "M")
+- **Preus:** `price` (HT sense IVA), `price_ttc` (TTC amb IVA) — usar `price_ttc` per mostrar
+- **Stock:** `stock_reel` (estoc físic), `stock_theorique` (estoc teòric, sempre `null` aquí)
+- **Visibilitat:** `status` (1 = a la venta), `array_options.options_woodolisync_catalog_visibility` (valores: "visible", "hidden", etc.) — filtrar `status=1`
+- **Descripció:** `array_options.options_woodolisync_product_short_description` (extrafield)
+
+### Tags / Etiquetes (LIMITACIÓ DESCOBERTA)
+- **NO accessibles via API REST.** WooCommerce tags viuen en taules pròpies de Dolibarr creades pel mòdul `custom/woodolisync`:
+  - `llx_melicoto_product_tags` (etiqueta master)
+  - `llx_melicoto_product_tag_product` (associació)
+- **Workaround per fase futura:** query SQL directe (si escala) o endpoint custom a Dolibarr
+- **Fora d'abast fase 2:** filtres per tags, navegació de tags
+
+### Variants de color
+- **NO trobat extrafield `woodolisync_color`.** Només talla (`options_woodolisync_talla`) està modela explícitament
+- **Nota:** WooCommerce pot tenir colors, però Dolibarr/WoodolisSync ho mapeja només per talla en aquesta instala
+
+### Rate limiting
+- No observat límit en crides senzilles (`/categories`, `/products?limit=500`)
+- Verifica sense-assó en producció si afegim moltes crides en paral·lel
+
+### Paginació
+- `/products?limit=500` funciona (retorna fins a 500 registres)
+- No es necessita paginació per a categoria+productes d'una sola categoria (máx ~50-100 productes per categoria en aquest cas)
 
 ---
 
