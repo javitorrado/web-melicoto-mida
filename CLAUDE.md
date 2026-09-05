@@ -322,14 +322,52 @@ Afegir conforme necessitem:
 
 6. ✅ Commit + push (auto-deploy Vercel)
 
-### Pròxims passos per sessió 3
+### Sessió 3 — 2026-09-06 (FASE 2 PART 2: Carret i Checkout)
 
-1. **Cistella (carret)** — estat en client (localStorage) o servidor (sessionStorage)
-2. **Checkout** — formulari dades client, validació enviament
-3. **Passarel·la de pagament** — decisió Redsys vs Stripe + integració
-4. **Blog + pàgines estàtiques** — BD pròpia, editor senzill
-5. **Imatges de producte** — endpoint documents de Dolibarr (més complex)
-6. **Tags/filtres transversals** — query SQL custom (fora d'API REST)
+1. ✅ Investigar creació d'ordres a Dolibarr en viu:
+   - Endpoints confirmats: `POST /thirdparties`, `POST /orders`, `POST /orders/{id}/lines`
+   - Ordre es crea en draft fins que es cridi `/orders/{id}/validate`
+   - Revaluació d'estoc no-atòmica (limitació documentada)
+   - Deduplicació de thirdparties per email (futura millora, fora d'abast)
+
+2. ✅ Arquitectura carret:
+   - React Context + localStorage (`useCart()` hook)
+   - CartProvider wraps layout.tsx
+   - CartItem interface amb productId, ref, label, variantLabel, categorySlug, productSlug, price, qty, maxStock
+
+3. ✅ Funcionalitat checkout:
+   - `src/lib/shipping.ts`: `calculateShipping(subtotal, postalCode)` retorna cost + blocked flag
+   - Enviament: 6,5€ Mallorca (07), 7,5€ resta Espanya, gratuït ≥60€
+   - Bloqueig CP per Canàries (35/38), Ceuta (51), Melilla (52)
+   - Recollida a botiga = 0€
+
+4. ✅ Components de págines:
+   - `src/components/AddToCartButton.tsx` — botó interactiu amb confirmació visual
+   - `/carret` (server page + CartPageClient component) — llistat amb quantitats editables
+   - `/checkout` (server page + CheckoutPageClient) — formulari + resum dinàmic
+   - `/comanda-confirmada` (server page + OrderConfirmedPageClient) — confirmació
+
+5. ✅ Endpoint backend:
+   - `POST /api/checkout` — rep items + customer + address, valida estoc, crea thirdparty + order en draft
+   - Resposta: `{ orderId, orderRef }` → redirigeix a `/comanda-confirmada`
+
+6. ✅ Ampliar `fetchFromDolibarr()` — accepta method + body per a POST/PUT/DELETE
+
+7. ✅ Documentació:
+   - `docs/dolibarr-api-mapping.md`: endpoints `/thirdparties`, `/orders` confirmats, limitacions documentades
+   - `docs/payment-integration.md`: arquitectura CECA pendent (fase 3)
+
+8. ✅ Build success, tests locals (dev server port 3001)
+
+9. ✅ Commit + push (auto-deploy Vercel)
+
+### Pròxims passos per sessió 4 (Fase 3: Pagament CECA)
+
+1. **Contactar CECA** — obtenir credencials sandbox + documentació API
+2. **Endpoint `/api/payment/initiate`** — construir URL TPV amb signatura
+3. **Endpoint `/api/payment/callback`** — rebre resposta CECA, validar signatura, validar comanda a Dolibarr
+4. **Pàgina `/pagament` i `/pagament-confirmada`** — ui per flow de pagament
+5. **Integració amb `/comanda-confirmada`** — botó "Pagar" → redirigeix a pagament
 
 ---
 
