@@ -24,6 +24,14 @@ export interface DolibarrProduct {
   parentProductId: number | null;
   variantLabel?: string;
   variants?: DolibarrProduct[];
+
+  // B2B fields (from array_options)
+  b2bPrice?: number;
+  b2bPriceTTC?: number;
+  b2bMinimumOrder?: number;
+  b2bHidden?: boolean;
+  b2bFreeShippingFrom?: number;
+  recargEquivalencia?: number; // % recàrrec d'equivalència
 }
 
 /** IVA per defecte (enviament i productes sense tipus definit a Dolibarr) */
