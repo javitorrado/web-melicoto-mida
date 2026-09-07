@@ -52,6 +52,19 @@ function initSchema() {
       createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Create demo admin if none exists
+  const adminCount = d.prepare("SELECT COUNT(*) as count FROM admin_users").get() as { count: number };
+  if (adminCount.count === 0) {
+    const demoPassword = hashPassword("demo1234");
+    const now = new Date().toISOString();
+    d.prepare("INSERT INTO admin_users (email, password, name, createdAt) VALUES (?, ?, ?, ?)").run(
+      "demo@melicoto.com",
+      demoPassword,
+      "Demo Admin",
+      now
+    );
+  }
 }
 
 // Auth helpers
