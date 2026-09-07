@@ -383,6 +383,41 @@ input:focus, textarea:focus, select:focus {
 .mc-breadcrumb a { color: var(--color-muted); }
 .mc-breadcrumb a:hover { color: var(--color-turquoise); }
 
+/* ---------- Contingut Markdown (pàgines i blog) ---------- */
+.mc-prose { color: var(--color-body); line-height: 1.8; font-size: 1.02rem; }
+.mc-prose > *:first-child { margin-top: 0; }
+.mc-prose h2 {
+  font-size: 1.4rem;
+  color: var(--color-ink);
+  margin: var(--space-xl) 0 var(--space-sm);
+}
+.mc-prose h3 {
+  font-size: 1.15rem;
+  color: var(--color-ink);
+  margin: var(--space-lg) 0 var(--space-xs);
+}
+.mc-prose p { margin: 0 0 var(--space-md); }
+.mc-prose ul, .mc-prose ol { margin: 0 0 var(--space-md) 1.3rem; }
+.mc-prose li { margin-bottom: 0.35rem; }
+.mc-prose a { color: var(--color-turquoise); text-decoration: underline; }
+.mc-prose a:hover { color: var(--color-primary-dark); }
+.mc-prose img { border-radius: var(--radius-md); margin: var(--space-md) 0; }
+.mc-prose blockquote {
+  border-left: 3px solid var(--color-turquoise);
+  padding-left: var(--space-md);
+  margin: var(--space-md) 0;
+  color: var(--color-muted);
+}
+.mc-prose hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--space-xl) 0; }
+.mc-prose table { width: 100%; border-collapse: collapse; margin: var(--space-md) 0; font-size: 0.95rem; }
+.mc-prose th, .mc-prose td { border: 1px solid var(--color-border); padding: 0.5rem 0.7rem; text-align: left; }
+.mc-prose code {
+  background: var(--color-bg-soft);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+}
+
 @media (max-width: 860px) {
   .mc-header__bar { flex-wrap: wrap; }
   .mc-nav { order: 3; width: 100%; gap: 0.9rem; }

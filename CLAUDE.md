@@ -420,10 +420,35 @@ per email, deduir el `root category id` en lloc de `=== 1` hardcod.
    - `CategoryGrid.tsx` eliminat (substituït). `src/styles/colors.ts` queda orfe (no usat).
 
 **Pendent aparença:** menú mòbil (hamburguesa), banners/hero amb foto real, pàgina
-de tags (`/shop/etiqueta-producte/...`), pàgines estàtiques (Qui som, Blog, legals),
-`next/font` en lloc de `<link>`, unificar els estils inline que queden a checkout.
+de tags (`/shop/etiqueta-producte/...`), `next/font` en lloc de `<link>`, unificar
+els estils inline que queden a checkout.
 
-### Pròxims passos per sessió 6 (Fase 3: Pagament CECA)
+### Sessió 6 — 2026-09-07 (FASE 2: CMS de pàgines estàtiques + blog, basat en fitxers)
+
+Decisió: **híbrid** — ara Markdown a `content/`, panell `/admin` amb BD en una fase
+posterior (l'API de `src/lib/content.ts` es mantindrà). CECA es deixa per al final.
+
+1. ✅ `content/pages/<slug>.md` → ruta `/<slug>` via `src/app/[slug]/page.tsx`
+   (`generateStaticParams` + `dynamicParams = false`; els segments literals com
+   `carret`, `shop`, `blog`… tenen prioritat sobre el dinàmic).
+2. ✅ `content/blog/<slug>.md` → `/blog` (llistat) + `/blog/<slug>` (article).
+   Frontmatter blog: `date` (obligatori, ordena), `excerpt`, `cover`, `draft`.
+3. ✅ `src/lib/content.ts`: `gray-matter` (frontmatter) + `marked` (md→html).
+   `getPage/getPageSlugs/getPost/getPosts`. Render via `<Prose>` (contingut propi,
+   de confiança → `dangerouslySetInnerHTML`). Estils `.mc-prose` a `globals.css`.
+4. ✅ Contingut migrat de www.melicoto.com: Qui som (`melicoto`), Tens dubtes,
+   Contacte, Dibuixos, Camisetes x grups (`feim-pinya`), Nota legal, Política de
+   cookies, Política de privacitat. `mapa-de-la-web` és una pàgina React que llista
+   categories + pàgines + blog dinàmicament.
+5. ✅ `next.config.js`: `outputFileTracingIncludes` per garantir que `content/` viatja
+   amb les funcions serverless (fs amb ruta calculada no el detecta el tracing).
+6. ✅ `content/README.md` amb el format per a quan editi en Javier.
+
+**Pendent CMS:** formulari de contacte real (endpoint), fitxes de dibuixos
+descarregables, revisar el text extret de la pàgina de cookies (té soroll d'estructura),
+i la fase 2 (panell `/admin` + BD — Neon Postgres provisionalment).
+
+### Pròxims passos (Fase 3: Pagament CECA — AL FINAL)
 
 1. **Contactar CECA** — obtenir credencials sandbox + documentació API
 2. **Endpoint `/api/payment/initiate`** — construir URL TPV amb signatura
