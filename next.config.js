@@ -6,6 +6,14 @@ const nextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./content/**/*"],
   },
+  // Ignora carpeta antiga (shop) que causa permisos de Windows
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
+  webpack: (config, { isServer }) => {
+    config.watchOptions = {
+      ignored: ['**/node_modules', '**/.next', '**/src/app/(shop)/**'],
+    };
+    return config;
+  },
 };
 
 module.exports = nextConfig;

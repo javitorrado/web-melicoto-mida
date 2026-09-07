@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CartProvider } from "@/lib/cart-context";
+import { UserProvider } from "@/lib/user-context";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { getTopCategories } from "@/lib/dolibarr";
@@ -41,11 +42,13 @@ export default async function RootLayout({
         />
       </head>
       <body>
-        <CartProvider>
-          <SiteHeader categories={nav} />
-          <main>{children}</main>
-          <SiteFooter />
-        </CartProvider>
+        <UserProvider>
+          <CartProvider>
+            <SiteHeader categories={nav} />
+            <main>{children}</main>
+            <SiteFooter />
+          </CartProvider>
+        </UserProvider>
       </body>
     </html>
   );
