@@ -501,4 +501,46 @@ i la fase 2 (panell `/admin` + BD — Neon Postgres provisionalment).
 
 ---
 
-*Última actualització: 2026-09-06 — Fase 2 part 1 completada. Següent: cistella + checkout (fase 2 part 2).*
+### Sessió 7 — 2026-09-07 (FASE 2: B2B system + Mobile menu)
+
+**Codi llest, Dolibarr DB setup pendent**
+
+1. ✅ **User context + auth:**
+   - `src/lib/user-context.tsx`: `useUser()` hook, `ClientType: "retail" | "b2b"`
+   - Persistència a localStorage
+   - Métodes: `login(email, company, "b2b")`, `logout()`, `setClientType()`
+
+2. ✅ **Preus dinàmics B2B:**
+   - `src/components/PriceDisplay.tsx`: Mostra preu según client type
+   - Suporta recàrrec d'equivalència (%)
+   - Fallback a preu retail si no hi ha preu B2B
+
+3. ✅ **Components:**
+   - `<ClientToggle />`: Button + login popup (email + company)
+   - `<MobileMenu />`: Hamburguesa responsive, categories, links
+   - Integrats al layout (pendent)
+
+4. ✅ **DolibarrProduct expandit:**
+   ```ts
+   b2bPrice, b2bPriceTTC           // Preus exclusius B2B
+   b2bMinimumOrder                 // Comanda mínima
+   b2bHidden                       // Amagar per B2B
+   b2bFreeShippingFrom             // Enviament gratuit diferent
+   recargEquivalencia              // % recàrrec
+   ```
+   Mapper llest a `mapRawProductToDolibarr()` per extreure `array_options`
+
+**⏳ PENDENT a Dolibarr (quan estigui llest):**
+- Crear extrafields: `options_b2b_price_ttc`, `options_b2b_minimum_order`, `options_b2b_hidden`, `options_b2b_free_shipping_from`, `options_recargo_equivalencia`
+- Veure `docs/B2B_SETUP.md` per a instruccions exactes i storage names
+- Une vegada creats, el codi mapperà automàticament
+
+**Pendent integració:**
+- Wrap `<UserProvider>` a layout.tsx
+- Afegir `<ClientToggle />` + `<MobileMenu />` al SiteHeader
+- Testejar login/logout B2B
+- Verificar que preus canvien dinàmicament
+
+---
+
+*Última actualització: 2026-09-07 — B2B system code ready, Dolibarr DB pending. Següent: integrar al layout + testejar.*
