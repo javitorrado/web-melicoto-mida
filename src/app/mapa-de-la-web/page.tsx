@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getCategories, getTopCategories } from "@/lib/dolibarr";
 import { getPageSlugs, getPosts } from "@/lib/content";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Mapa de la web — Melicotó",
   robots: "noindex, nofollow",
@@ -20,9 +22,12 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 export default async function SiteMapPage() {
-  const [tops, all] = await Promise.all([getTopCategories(), getCategories()]);
-  const pages = getPageSlugs();
-  const posts = getPosts();
+  const [tops, all, pages, posts] = await Promise.all([
+    getTopCategories(),
+    getCategories(),
+    getPageSlugs(),
+    getPosts(),
+  ]);
 
   return (
     <div className="mc-container mc-page" style={{ maxWidth: 820 }}>

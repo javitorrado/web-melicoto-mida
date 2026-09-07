@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getPosts } from "@/lib/content";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Blog — Melicotó",
   description: "Notícies, històries i cultura illenca des de Melicotó.",
@@ -14,8 +16,8 @@ function formatDate(iso: string) {
   return d.toLocaleDateString("ca-ES", { day: "numeric", month: "long", year: "numeric" });
 }
 
-export default function BlogIndex() {
-  const posts = getPosts();
+export default async function BlogIndex() {
+  const posts = await getPosts();
 
   return (
     <div className="mc-container mc-page" style={{ maxWidth: 820 }}>

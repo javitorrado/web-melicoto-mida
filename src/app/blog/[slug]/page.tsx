@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPost, getPostSlugs } from "@/lib/content";
+import { getPost } from "@/lib/content";
 import { Prose } from "@/components/Prose";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return getPostSlugs().map((slug) => ({ slug }));
-}
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,
@@ -16,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPost(slug);
   if (!post) return {};
   return {
     title: `${post.meta.title} — Blog Melicotó`,
@@ -37,7 +33,7 @@ export default async function BlogPost({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPost(slug);
   if (!post) notFound();
 
   return (

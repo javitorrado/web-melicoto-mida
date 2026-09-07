@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getPage, getPageSlugs } from "@/lib/content";
+import { getPage } from "@/lib/content";
 import { Prose } from "@/components/Prose";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return getPageSlugs().map((slug) => ({ slug }));
-}
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,
@@ -15,7 +11,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const page = getPage(slug);
+  const page = await getPage(slug);
   if (!page) return {};
   return {
     title: `${page.meta.title} — Melicotó`,
@@ -30,7 +26,7 @@ export default async function StaticPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const page = getPage(slug);
+  const page = await getPage(slug);
   if (!page) notFound();
 
   return (

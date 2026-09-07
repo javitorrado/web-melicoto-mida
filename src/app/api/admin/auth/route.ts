@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Email and password required" }, { status: 400 });
       }
 
-      const admin = getAdminByEmail(email);
+      const admin = await getAdminByEmail(email);
       if (!admin || !verifyPassword(password, admin.password)) {
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
@@ -30,12 +30,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Email, password, and name required" }, { status: 400 });
       }
 
-      const existing = getAdminByEmail(email);
+      const existing = await getAdminByEmail(email);
       if (existing) {
         return NextResponse.json({ error: "User already exists" }, { status: 409 });
       }
 
-      createAdminUser(email, password, name);
+      await createAdminUser(email, password, name);
       return NextResponse.json({ success: true }, { status: 201 });
     }
 

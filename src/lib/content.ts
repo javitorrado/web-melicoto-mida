@@ -23,12 +23,13 @@ export interface RenderedDoc<M> {
 
 /* ---------- Pàgines estàtiques ---------- */
 
-export function getPageSlugs(): string[] {
-  return getAllPages().map((p) => p.slug);
+export async function getPageSlugs(): Promise<string[]> {
+  const pages = await getAllPages();
+  return pages.map((p) => p.slug);
 }
 
-export function getPage(slug: string): RenderedDoc<PageMeta> | null {
-  const page = getPageDb(slug);
+export async function getPage(slug: string): Promise<RenderedDoc<PageMeta> | null> {
+  const page = await getPageDb(slug);
   if (!page) return null;
   return {
     meta: {
@@ -43,12 +44,14 @@ export function getPage(slug: string): RenderedDoc<PageMeta> | null {
 
 /* ---------- Blog ---------- */
 
-export function getPostSlugs(): string[] {
-  return getAllBlogPosts().map((p) => p.slug);
+export async function getPostSlugs(): Promise<string[]> {
+  const posts = await getAllBlogPosts();
+  return posts.map((p) => p.slug);
 }
 
-export function getPosts(): PostMeta[] {
-  return getAllBlogPosts().map((post) => ({
+export async function getPosts(): Promise<PostMeta[]> {
+  const posts = await getAllBlogPosts();
+  return posts.map((post) => ({
     slug: post.slug,
     title: post.title,
     description: post.description,
@@ -58,8 +61,8 @@ export function getPosts(): PostMeta[] {
   }));
 }
 
-export function getPost(slug: string): RenderedDoc<PostMeta> | null {
-  const post = getBlogPostDb(slug);
+export async function getPost(slug: string): Promise<RenderedDoc<PostMeta> | null> {
+  const post = await getBlogPostDb(slug);
   if (!post) return null;
   return {
     meta: {

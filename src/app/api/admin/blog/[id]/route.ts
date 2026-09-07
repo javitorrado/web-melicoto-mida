@@ -14,7 +14,7 @@ export async function PUT(
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    updateBlogPost(postId, title, content, date, description, excerpt, cover, published);
+    await updateBlogPost(postId, title, content, date, description, excerpt, cover, published);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Failed to update blog post" }, { status: 500 });
@@ -29,7 +29,7 @@ export async function DELETE(
     const { id } = await params;
     const postId = parseInt(id, 10);
 
-    deleteBlogPost(postId);
+    await deleteBlogPost(postId);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete blog post" }, { status: 500 });
