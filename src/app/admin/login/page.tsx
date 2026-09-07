@@ -208,7 +208,7 @@ export default function AdminLogin() {
 
         <div style={{ marginTop: "1rem", borderTop: "1px solid var(--color-border)", paddingTop: "1rem", textAlign: "center" }}>
           <Link href="/" style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>
-            ← Tornar a l'inici
+            ← Tornar a l&apos;inici
           </Link>
         </div>
       </div>
