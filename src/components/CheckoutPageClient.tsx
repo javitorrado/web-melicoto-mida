@@ -27,11 +27,11 @@ export function CheckoutPageClient() {
 
   if (items.length === 0) {
     return (
-      <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-        <h1>Checkout — Carret buit</h1>
+      <div className="mc-container mc-page">
+        <h1 className="mc-page-title">La cistella és buida</h1>
         <p>Afegeix productes primer.</p>
-        <Link href="/carret" style={{ color: "#007bff", textDecoration: "none" }}>
-          Tornar al carret
+        <Link href="/carret" className="mc-btn mc-btn--ghost" style={{ marginTop: "1rem" }}>
+          Tornar a la cistella
         </Link>
       </div>
     );
@@ -111,8 +111,8 @@ export function CheckoutPageClient() {
   };
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-      <h1>Checkout</h1>
+    <div className="mc-container mc-page">
+      <h1 className="mc-page-title">Finalitzar compra</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginTop: "2rem" }}>
         {/* Form */}
@@ -255,52 +255,19 @@ export function CheckoutPageClient() {
                 />
 
                 {shippingError && (
-                  <div
-                    style={{
-                      padding: "0.75rem",
-                      backgroundColor: "#f8d7da",
-                      color: "#721c24",
-                      borderRadius: "4px",
-                      border: "1px solid #f5c6cb",
-                    }}
-                  >
-                    ⚠️ {shippingError}
-                  </div>
+                  <div className="mc-alert mc-alert--error">⚠️ {shippingError}</div>
                 )}
               </div>
             )}
           </fieldset>
 
-          {error && (
-            <div
-              style={{
-                padding: "1rem",
-                backgroundColor: "#f8d7da",
-                color: "#721c24",
-                borderRadius: "4px",
-                border: "1px solid #f5c6cb",
-              }}
-            >
-              {error}
-            </div>
-          )}
+          {error && <div className="mc-alert mc-alert--error">{error}</div>}
 
           <button
             type="submit"
             disabled={loading || (formData.deliveryMethod === "delivery" && shippingBlocked)}
-            style={{
-              padding: "1rem",
-              backgroundColor:
-                loading || (formData.deliveryMethod === "delivery" && shippingBlocked)
-                  ? "#ccc"
-                  : "#28a745",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: loading || (formData.deliveryMethod === "delivery" && shippingBlocked) ? "not-allowed" : "pointer",
-              fontWeight: "bold",
-              marginTop: "1rem",
-            }}
+            className="mc-btn mc-btn--accent"
+            style={{ marginTop: "1rem" }}
           >
             {loading ? "Processant..." : "Crear comanda"}
           </button>
@@ -390,9 +357,7 @@ export function CheckoutPageClient() {
       </div>
 
       <div style={{ marginTop: "2rem" }}>
-        <Link href="/carret" style={{ color: "#007bff", textDecoration: "none" }}>
-          Tornar al carret
-        </Link>
+        <Link href="/carret">← Tornar a la cistella</Link>
       </div>
     </div>
   );

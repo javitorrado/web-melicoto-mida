@@ -162,6 +162,60 @@ export async function getProductByRef(ref: string): Promise<DolibarrProduct | nu
   return products.find((p) => p.ref.toLowerCase() === ref.toLowerCase()) || null;
 }
 
+export interface ProductImage {
+  /** `original_file` per a /documents/download, ex: "MEL_06533/DSC01879-scaled.jpg" */
+  path: string;
+  name: string;
+}
+
+/**
+ * Llista les fotos d'un producte (taula ECM de Dolibarr, modulepart=product).
+ * Ordenades per `position` i amb la marcada com a `cover` primera.
+ */
+export async function getProductImages(productId: number): Promise<ProductImage[]> {
+  if (!isLiveMode()) return [];
+  try {
+    const files = await fetchFromDolibarr<any[]>(
+      `/documents?modulepart=product&id=${productId}`
+    );
+    return files
+      .filter((f) => /\.(jpe?g|png|webp|gif|avif)$/i.test(f.filename || f.name || ""))
+      .sort((a, b) => {
+        const cover = (Number(b.cover) || 0) - (Number(a.cover) || 0);
+        if (cover) return cover;
+        return (Number(a.position) || 0) - (Number(b.position) || 0);
+      })
+      .map((f) => {
+        const dir: string = f.level1name || (f.filepath || "").replace(/^produit\//, "");
+        const name: string = f.filename || f.name;
+        return { path: `${dir}/${name}`, name };
+      });
+  } catch (error) {
+    console.error(`Failed to list images for product ${productId}:`, error);
+    return [];
+  }
+}
+
+/** Descarrega un fitxer de producte i el retorna com a bytes + mime. */
+export async function downloadProductFile(
+  originalFile: string
+): Promise<{ buffer: Buffer; contentType: string } | null> {
+  if (!isLiveMode()) return null;
+  try {
+    const res = await fetchFromDolibarr<{ content: string; "content-type": string }>(
+      `/documents/download?modulepart=product&original_file=${encodeURIComponent(originalFile)}`
+    );
+    if (!res?.content) return null;
+    return {
+      buffer: Buffer.from(res.content, "base64"),
+      contentType: res["content-type"] || "image/jpeg",
+    };
+  } catch (error) {
+    console.error(`Failed to download ${originalFile}:`, error);
+    return null;
+  }
+}
+
 export function slugify(text: string): string {
   return text
     .normalize("NFD")

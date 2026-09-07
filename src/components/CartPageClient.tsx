@@ -9,11 +9,11 @@ export function CartPageClient() {
 
   if (items.length === 0) {
     return (
-      <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-        <h1>Carret buit</h1>
+      <div className="mc-container mc-page">
+        <h1 className="mc-page-title">La cistella és buida</h1>
         <p>Afegeix productes per fer una comanda.</p>
-        <Link href="/" style={{ color: "#007bff", textDecoration: "none" }}>
-          Tornar a les categories
+        <Link href="/" className="mc-btn mc-btn--primary" style={{ marginTop: "1rem" }}>
+          Veure els productes
         </Link>
       </div>
     );
@@ -23,131 +23,96 @@ export function CartPageClient() {
   const total = subtotal + shippingCost;
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-      <h1>Carret</h1>
+    <div className="mc-container mc-page">
+      <h1 className="mc-page-title">La teva cistella</h1>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "1rem" }}>
-        <thead>
-          <tr style={{ borderBottom: "2px solid #ddd" }}>
-            <th style={{ textAlign: "left", padding: "0.75rem" }}>Producte</th>
-            <th style={{ textAlign: "center", padding: "0.75rem" }}>Preu</th>
-            <th style={{ textAlign: "center", padding: "0.75rem" }}>Quantitat</th>
-            <th style={{ textAlign: "right", padding: "0.75rem" }}>Subtotal</th>
-            <th style={{ textAlign: "center", padding: "0.75rem" }}>Accions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, idx) => (
-            <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
-              <td style={{ padding: "0.75rem" }}>
-                <div>
-                  <strong>{item.label}</strong>
-                  {item.variantLabel && <div style={{ fontSize: "0.9rem", color: "#666" }}>Talla: {item.variantLabel}</div>}
-                  <div style={{ fontSize: "0.85rem", color: "#999" }}>Ref: {item.ref}</div>
-                </div>
-              </td>
-              <td style={{ textAlign: "center", padding: "0.75rem" }}>{item.price.toFixed(2)}€</td>
-              <td style={{ textAlign: "center", padding: "0.75rem" }}>
-                <input
-                  type="number"
-                  min="1"
-                  max={item.maxStock}
-                  value={item.qty}
-                  onChange={(e) =>
-                    updateQty(item.productId, parseInt(e.target.value), item.variantLabel)
-                  }
-                  style={{ width: "60px", padding: "0.25rem", textAlign: "center" }}
-                />
-              </td>
-              <td style={{ textAlign: "right", padding: "0.75rem" }}>
-                {(item.price * item.qty).toFixed(2)}€
-              </td>
-              <td style={{ textAlign: "center", padding: "0.75rem" }}>
-                <button
-                  onClick={() => removeItem(item.productId, item.variantLabel)}
-                  style={{
-                    backgroundColor: "#dc3545",
-                    color: "white",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div
-        style={{
-          marginTop: "2rem",
-          padding: "1rem",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "8px",
-          textAlign: "right",
-        }}
-      >
-        <p>
-          <strong>Subtotal:</strong> {subtotal.toFixed(2)}€
-        </p>
-        <p>
-          <strong>Enviament:</strong> {shippingCost > 0 ? `${shippingCost.toFixed(2)}€` : "Gratuït"}
-        </p>
-        {subtotal < 60 && (
-          <p style={{ fontSize: "0.9rem", color: "#666" }}>
-            💡 Enviament gratuït a partir de 60€
-          </p>
-        )}
-        <p style={{ fontSize: "1.2rem", marginTop: "1rem" }}>
-          <strong>Total:</strong> {total.toFixed(2)}€
-        </p>
-      </div>
-
-      <div
-        style={{
-          marginTop: "2rem",
-          display: "flex",
-          gap: "1rem",
-          justifyContent: "flex-end",
-        }}
-      >
-        <button
-          onClick={() => clear()}
-          style={{
-            backgroundColor: "#6c757d",
-            color: "white",
-            border: "none",
-            padding: "0.75rem 1.5rem",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          Buidar carret
-        </button>
-        <Link href="/checkout">
-          <button
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        {items.map((item, idx) => (
+          <div
+            key={idx}
             style={{
-              backgroundColor: "#28a745",
-              color: "white",
-              border: "none",
-              padding: "0.75rem 1.5rem",
-              borderRadius: "4px",
-              cursor: "pointer",
+              display: "grid",
+              gridTemplateColumns: "72px 1fr auto auto auto",
+              gap: "1rem",
+              alignItems: "center",
+              padding: "0.75rem",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-md)",
             }}
           >
-            Continuar a checkout
-          </button>
-        </Link>
+            <div style={{ width: 72, height: 72, borderRadius: "var(--radius-sm)", overflow: "hidden", background: "var(--color-bg-alt)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/api/product-image?productId=${item.productId}`}
+                alt={item.label}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            </div>
+            <div>
+              <strong style={{ color: "var(--color-ink)" }}>{item.label}</strong>
+              {item.variantLabel && (
+                <div style={{ fontSize: "0.85rem", color: "var(--color-muted)" }}>Talla: {item.variantLabel}</div>
+              )}
+              <div style={{ fontSize: "0.8rem", color: "var(--color-muted)" }}>Ref: {item.ref}</div>
+            </div>
+            <div style={{ whiteSpace: "nowrap" }}>{item.price.toFixed(2)} €</div>
+            <input
+              type="number"
+              min={1}
+              max={item.maxStock}
+              value={item.qty}
+              onChange={(e) => updateQty(item.productId, parseInt(e.target.value) || 1, item.variantLabel)}
+              style={{ width: 64, textAlign: "center" }}
+            />
+            <button
+              onClick={() => removeItem(item.productId, item.variantLabel)}
+              className="mc-btn mc-btn--ghost"
+              style={{ padding: "0.5rem 0.9rem", textTransform: "none" }}
+            >
+              Treure
+            </button>
+          </div>
+        ))}
       </div>
 
-      <div style={{ marginTop: "2rem" }}>
-        <Link href="/" style={{ color: "#007bff", textDecoration: "none" }}>
-          Continuar comprant
-        </Link>
+      <div className="mc-panel" style={{ marginTop: "var(--space-xl)", maxWidth: 360, marginLeft: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+          <span>Subtotal</span>
+          <span>{subtotal.toFixed(2)} €</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+          <span>Enviament estimat</span>
+          <span>{shippingCost > 0 ? `${shippingCost.toFixed(2)} €` : "Gratuït"}</span>
+        </div>
+        {subtotal < 60 && (
+          <p style={{ fontSize: "0.85rem", color: "var(--color-muted)" }}>
+            Enviament gratuït a partir de 60€
+          </p>
+        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontWeight: 700,
+            fontSize: "1.15rem",
+            borderTop: "1px solid var(--color-border)",
+            paddingTop: "0.6rem",
+            marginTop: "0.4rem",
+            color: "var(--color-ink)",
+          }}
+        >
+          <span>Total</span>
+          <span>{total.toFixed(2)} €</span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: "var(--space-xl)", display: "flex", gap: "1rem", justifyContent: "flex-end", flexWrap: "wrap" }}>
+        <button onClick={() => clear()} className="mc-btn mc-btn--ghost">Buidar</button>
+        <Link href="/checkout" className="mc-btn mc-btn--accent">Continuar a la compra</Link>
+      </div>
+
+      <div style={{ marginTop: "var(--space-lg)" }}>
+        <Link href="/">← Continuar comprant</Link>
       </div>
     </div>
   );

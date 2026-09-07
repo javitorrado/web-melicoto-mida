@@ -22,21 +22,13 @@ export function AddToCartButton({ item }: AddToCartButtonProps) {
       <button
         onClick={handleClick}
         disabled={item.maxStock === 0}
-        style={{
-          padding: "0.75rem 1.5rem",
-          backgroundColor: item.maxStock > 0 ? "#28a745" : "#ccc",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: item.maxStock > 0 ? "pointer" : "not-allowed",
-          marginTop: "1rem",
-        }}
+        className="mc-btn mc-btn--accent"
       >
-        {item.maxStock > 0 ? "Afegir a la cistella" : "Sense estoc"}
+        {item.maxStock > 0 ? "Afegeix a la cistella" : "Sense estoc"}
       </button>
       {showConfirm && (
-        <p style={{ marginTop: "0.5rem", color: "#28a745", fontWeight: "bold" }}>
-          ✓ Afegit al carret
+        <p style={{ marginTop: "0.6rem", color: "var(--color-success)", fontWeight: 600 }}>
+          ✓ Afegit a la cistella
         </p>
       )}
     </div>

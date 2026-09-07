@@ -394,10 +394,36 @@ fitxa de producte, `package-lock.json` es commita (build reproduïble a Vercel),
 codi mort eliminat (`slugToRef`).
 
 **Pendent (no bloquejant):** rate-limiting a `/api/checkout`, dedup de thirdparties
-per email, deduir el `root category id` en lloc de `=== 1` hardcod, unificar estils
-(barreja de tokens i colors hardcoded).
+per email, deduir el `root category id` en lloc de `=== 1` hardcod.
 
-### Pròxims passos per sessió 5 (Fase 3: Pagament CECA)
+### Sessió 5 — 2026-09-07 (FASE 2: Aparença melicoto.com + imatges de producte)
+
+1. ✅ **Imatges de producte.** Dolibarr no exposa imatges al JSON del producte; viuen
+   a l'ECM (`GET /documents?modulepart=product&id=<id>` → llista, `GET /documents/download`
+   → base64). Nou proxy `GET /api/product-image?productId=X[&file=Y][&fallbackId=Z]`
+   (el navegador mai crida Dolibarr): llista fotos, valida el fitxer contra la llista,
+   descarrega i serveix els bytes amb `Cache-Control` llarg. Helpers a `dolibarr.ts`:
+   `getProductImages()`, `downloadProductFile()`. Placeholder SVG a `/public`.
+   Les fotos de les variants surten del producte pare (`parentProductId`).
+2. ✅ **Disseny basat en www.melicoto.com** (tema WordPress "Sober"):
+   - Colors: text `#23232c`, cos `#7c7c80`, turquesa `#27afb7`, taronja `#ffa734`,
+     fons `#f4f4f4`. (La sessió 3 havia posat verd `#4CAF50` per error — no és el color real.)
+   - Fonts: **Poppins** per UI/cos (Axiforma real és de pagament), **Calistoga** per a
+     títols grans. Carregades via `<link>` a `layout.tsx`.
+   - `globals.css` reescrit com a sistema de classes `mc-*` (`.mc-container`, `.mc-btn`,
+     `.mc-card`, `.mc-product-grid`, `.mc-header`, `.mc-footer`, `.mc-alert`…).
+   - Nous components: `SiteHeader` (logo + nav 7 categories + comptador de cistella),
+     `SiteFooter` (dades botiga + enllaços), `ProductCard`, `ProductGallery`.
+   - `layout.tsx` ara és async i injecta header/footer; totes les pàgines (home,
+     categoria, subcategoria, fitxa, cistella, checkout, confirmació) repassades a `mc-*`.
+   - Logo real descarregat a `public/logo-melicoto.png`.
+   - `CategoryGrid.tsx` eliminat (substituït). `src/styles/colors.ts` queda orfe (no usat).
+
+**Pendent aparença:** menú mòbil (hamburguesa), banners/hero amb foto real, pàgina
+de tags (`/shop/etiqueta-producte/...`), pàgines estàtiques (Qui som, Blog, legals),
+`next/font` en lloc de `<link>`, unificar els estils inline que queden a checkout.
+
+### Pròxims passos per sessió 6 (Fase 3: Pagament CECA)
 
 1. **Contactar CECA** — obtenir credencials sandbox + documentació API
 2. **Endpoint `/api/payment/initiate`** — construir URL TPV amb signatura

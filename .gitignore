@@ -27,6 +27,10 @@ yarn-error.log*
 build.log
 tsc.log
 lint.log
+eslint.log
+resp.json
+docs.json
+dl.json
 
 # local env files
 .env
