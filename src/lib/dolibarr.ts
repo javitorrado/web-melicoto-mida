@@ -10,8 +10,12 @@ export interface DolibarrProduct {
   ref: string;
   label: string;
   slug: string;
+  /** Preu unitari HT (sense IVA) — el que Dolibarr espera a `subprice` */
   price: number;
+  /** Preu unitari TTC (amb IVA) — el que es mostra a la web */
   priceTTC: number;
+  /** Tipus d'IVA del producte (%), tal com el té Dolibarr */
+  vatRate: number;
   stock: number;
   description?: string;
   status: number;
@@ -22,7 +26,13 @@ export interface DolibarrProduct {
   variants?: DolibarrProduct[];
 }
 
-const MOCK_PRODUCTS: Omit<DolibarrProduct, "slug" | "priceTTC" | "status" | "catalogVisibility" | "productType" | "parentProductId">[] = [
+/** IVA per defecte (enviament i productes sense tipus definit a Dolibarr) */
+export const DEFAULT_VAT_RATE = 21;
+
+const MOCK_PRODUCTS: Omit<
+  DolibarrProduct,
+  "slug" | "priceTTC" | "vatRate" | "status" | "catalogVisibility" | "productType" | "parentProductId"
+>[] = [
   {
     id: 1,
     ref: "CAMISETA-RISSAGA",
@@ -49,6 +59,13 @@ const MOCK_PRODUCTS: Omit<DolibarrProduct, "slug" | "priceTTC" | "status" | "cat
   },
 ];
 
+/** TTL de cache (segons) per a les crides GET a Dolibarr. */
+const CACHE_TTL_SECONDS = Number(process.env.CACHE_TTL_SECONDS ?? 90) || 90;
+
+export function isLiveMode(): boolean {
+  return Boolean(process.env.DOLIBARR_API_URL && process.env.DOLIBARR_API_KEY);
+}
+
 export async function fetchFromDolibarr<T>(
   endpoint: string,
   options?: { method?: string; body?: string }
@@ -60,66 +77,89 @@ export async function fetchFromDolibarr<T>(
     throw new Error("Dolibarr API credentials not configured");
   }
 
+  const method = options?.method ?? "GET";
+  const isRead = method === "GET";
+
   const res = await fetch(`${baseUrl}${endpoint}`, {
-    method: options?.method || "GET",
+    method,
     headers: {
       DOLAPIKEY: apiKey,
       Accept: "application/json",
       ...(options?.body && { "Content-Type": "application/json" }),
     },
     body: options?.body,
+    // Les lectures es cachegen (i es deduplicen) al runtime de Next;
+    // les escriptures mai.
+    ...(isRead
+      ? { next: { revalidate: CACHE_TTL_SECONDS } }
+      : { cache: "no-store" as const }),
   });
 
   if (!res.ok) {
-    throw new Error(`Dolibarr API error: ${res.status} ${res.statusText}`);
+    const detail = await res.text().catch(() => "");
+    throw new Error(
+      `Dolibarr API error: ${res.status} ${res.statusText}${detail ? ` — ${detail.slice(0, 500)}` : ""}`
+    );
   }
 
   return res.json();
 }
 
+function mockProducts(): DolibarrProduct[] {
+  return MOCK_PRODUCTS.map((p) => ({
+    ...p,
+    slug: slugify(p.label),
+    priceTTC: Number((p.price * (1 + DEFAULT_VAT_RATE / 100)).toFixed(2)),
+    vatRate: DEFAULT_VAT_RATE,
+    status: 1,
+    catalogVisibility: "visible",
+    productType: "simple",
+    parentProductId: null,
+  }));
+}
+
 export async function getProducts(): Promise<DolibarrProduct[]> {
-  const baseUrl = process.env.DOLIBARR_API_URL;
-  const apiKey = process.env.DOLIBARR_API_KEY;
+  if (!isLiveMode()) return mockProducts();
 
-  // Mode mock: if credentials not set, return mock data
-  if (!baseUrl || !apiKey) {
-    return MOCK_PRODUCTS.map((p) => ({
-      ...p,
-      slug: slugify(p.label),
-      priceTTC: p.price,
-      status: 1,
-      catalogVisibility: "visible",
-      productType: "simple",
-      parentProductId: null,
-    }));
-  }
-
-  // Mode live: fetch from real Dolibarr API
   try {
-    const raw = await fetchFromDolibarr<any[]>("/products?limit=500");
-    return raw.map(mapRawProductToDolibarr);
+    // Paginem per no quedar-nos amb un tall silenciós a 500 registres.
+    // Cap de seguretat per si l'API ignora `page` (evita bucle infinit).
+    const pageSize = 500;
+    const maxPages = 40;
+    const all: any[] = [];
+    const seen = new Set<number>();
+    for (let page = 0; page < maxPages; page++) {
+      const raw = await fetchFromDolibarr<any[]>(
+        `/products?limit=${pageSize}&page=${page}`
+      );
+      const fresh = raw.filter((r) => !seen.has(Number(r.id)));
+      fresh.forEach((r) => seen.add(Number(r.id)));
+      all.push(...fresh);
+      if (raw.length < pageSize || fresh.length === 0) break;
+    }
+    return all.map(mapRawProductToDolibarr);
   } catch (error) {
-    // Fallback to mock if API fails
     console.error("Dolibarr API fetch failed, using mock data:", error);
-    return MOCK_PRODUCTS.map((p) => ({
-      ...p,
-      slug: slugify(p.label),
-      priceTTC: p.price,
-      status: 1,
-      catalogVisibility: "visible",
-      productType: "simple",
-      parentProductId: null,
-    }));
+    return mockProducts();
+  }
+}
+
+export async function getProductById(id: number): Promise<DolibarrProduct | null> {
+  if (!isLiveMode()) {
+    return mockProducts().find((p) => p.id === id) ?? null;
+  }
+  try {
+    const raw = await fetchFromDolibarr<any>(`/products/${id}`);
+    return mapRawProductToDolibarr(raw);
+  } catch (error) {
+    console.error(`Failed to fetch product ${id}:`, error);
+    return null;
   }
 }
 
 export async function getProductByRef(ref: string): Promise<DolibarrProduct | null> {
   const products = await getProducts();
   return products.find((p) => p.ref.toLowerCase() === ref.toLowerCase()) || null;
-}
-
-export function slugToRef(slug: string): string {
-  return slug.toUpperCase().replace(/-/g, "-");
 }
 
 export function slugify(text: string): string {
@@ -138,39 +178,45 @@ function extractVariantLabel(label: string, talla: string | null): string {
 }
 
 function mapRawProductToDolibarr(raw: any): DolibarrProduct {
+  const price = parseFloat(raw.price || "0");
+  const vatRate = raw.tva_tx != null && raw.tva_tx !== "" ? parseFloat(raw.tva_tx) : DEFAULT_VAT_RATE;
+  const priceTTC = raw.price_ttc
+    ? parseFloat(raw.price_ttc)
+    : Number((price * (1 + vatRate / 100)).toFixed(2));
+
+  // `options_woodolisync_parent_product` pot arribar com a string ("0", "") o number.
+  const rawParent = Number(raw.array_options?.options_woodolisync_parent_product);
+  const parentProductId = Number.isFinite(rawParent) && rawParent > 0 ? rawParent : null;
+
   return {
-    id: raw.id,
+    id: Number(raw.id),
     ref: raw.ref,
     label: raw.label,
     slug: slugify(raw.label),
-    price: parseFloat(raw.price || "0"),
-    priceTTC: parseFloat(raw.price_ttc || "0"),
+    price,
+    priceTTC,
+    vatRate,
     stock: parseInt(raw.stock_reel || raw.stock || "0"),
     description: raw.description || raw.array_options?.options_woodolisync_product_short_description || undefined,
     status: parseInt(raw.status || "0"),
     catalogVisibility: raw.array_options?.options_woodolisync_catalog_visibility || "visible",
     productType: raw.array_options?.options_woodolisync_product_type || "simple",
-    parentProductId: raw.array_options?.options_woodolisync_parent_product || null,
+    parentProductId,
     variantLabel: extractVariantLabel(raw.label, raw.array_options?.options_woodolisync_talla || null),
   };
 }
 
 function mapRawCategoryToDolibarr(raw: any): DolibarrCategory {
   return {
-    id: raw.id,
+    id: Number(raw.id),
     label: raw.label,
     slug: raw.array_options?.options_woodolisync_slug || slugify(raw.label),
-    parentId: raw.fk_parent || 0,
+    parentId: Number(raw.fk_parent) || 0,
   };
 }
 
 export async function getCategories(): Promise<DolibarrCategory[]> {
-  const baseUrl = process.env.DOLIBARR_API_URL;
-  const apiKey = process.env.DOLIBARR_API_KEY;
-
-  if (!baseUrl || !apiKey) {
-    return [];
-  }
+  if (!isLiveMode()) return [];
 
   try {
     const categories = await fetchFromDolibarr<any[]>("/categories?limit=200");
@@ -210,12 +256,7 @@ export async function getSubcategories(parentId: number): Promise<DolibarrCatego
 export async function getProductsByCategory(
   categoryId: number
 ): Promise<DolibarrProduct[]> {
-  const baseUrl = process.env.DOLIBARR_API_URL;
-  const apiKey = process.env.DOLIBARR_API_KEY;
-
-  if (!baseUrl || !apiKey) {
-    return [];
-  }
+  if (!isLiveMode()) return [];
 
   try {
     const raw = await fetchFromDolibarr<any[]>(
@@ -254,16 +295,55 @@ export async function getProductBySlug(
   productSlug: string
 ): Promise<DolibarrProduct | null> {
   const products = await getProductsByCategory(categoryId);
+  return pickProductBySlug(products, productSlug);
+}
 
+function pickProductBySlug(
+  products: DolibarrProduct[],
+  productSlug: string
+): DolibarrProduct | null {
   for (const product of products) {
-    if (product.slug === productSlug) {
-      return product;
-    }
-    if (product.variants) {
-      const variant = product.variants.find((v) => v.slug === productSlug);
-      if (variant) return variant;
-    }
+    if (product.slug === productSlug) return product;
+    const variant = product.variants?.find((v) => v.slug === productSlug);
+    if (variant) return variant;
+  }
+  return null;
+}
+
+/**
+ * Resol un producte pel seu slug quan no sabem (o no encerta) la categoria:
+ * els enllaços de subcategoria passen la categoria pare, que no sempre conté
+ * el producte. Recorre categories principals + subcategories.
+ */
+export async function findProductBySlug(
+  productSlug: string,
+  preferredCategoryId?: number
+): Promise<DolibarrProduct | null> {
+  if (preferredCategoryId) {
+    const hit = await getProductBySlug(preferredCategoryId, productSlug);
+    if (hit) return hit;
   }
 
+  const categories = await getCategories();
+  const topSlugs = new Set([
+    "textil",
+    "complements",
+    "ca-nostra",
+    "cuina",
+    "artesania",
+    "papereria",
+    "infantil",
+  ]);
+  const roots = categories.filter((c) => topSlugs.has(c.slug));
+  const searchable = [
+    ...roots,
+    ...categories.filter((c) => roots.some((r) => r.id === c.parentId)),
+  ];
+
+  for (const cat of searchable) {
+    if (cat.id === preferredCategoryId) continue;
+    const hit = pickProductBySlug(await getProductsByCategory(cat.id), productSlug);
+    if (hit) return hit;
+  }
   return null;
 }

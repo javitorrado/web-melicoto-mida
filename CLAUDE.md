@@ -361,7 +361,43 @@ Afegir conforme necessitem:
 
 9. ✅ Commit + push (auto-deploy Vercel)
 
-### Pròxims passos per sessió 4 (Fase 3: Pagament CECA)
+### Sessió 4 — 2026-09-07 (FASE 2 FIX: correcció de bugs bloquejants)
+
+Revisió del codi de les fases 1-3: l'arquitectura era correcta però la implementació
+tenia bugs que impedien que res funcionés. Arreglats:
+
+1. ✅ **Rutes trencades.** Les carpetes estaven dins `src/app/(shop)/` (route group,
+   sense segment d'URL) → les rutes reals eren `/categoria/...` i `/producte/...`,
+   però tots els `<Link>` apuntaven a `/shop/categoria-producte/...` i `/productes/...`.
+   Mogudes a `src/app/shop/categoria-producte/[slug]/[subslug]` i
+   `src/app/productes/[...slug]` perquè coincideixin amb `docs/urls-mapping.md`.
+2. ✅ **Checkout: IVA i TTC/HT.** `POST /api/checkout` enviava `subprice` amb el preu
+   TTC (el del carret) quan Dolibarr espera HT, i `tva_tx: 21` fix. Ara el servidor
+   resol cada línia amb `getProductById()` i usa `product.price` (HT) + `product.vatRate`
+   (IVA real). Afegit camp `vatRate` a `DolibarrProduct` (des de `raw.tva_tx`).
+   Preu i estoc ja no es confien del client (només sanity check ±0,02€).
+   Enviament recalculat al servidor amb `calculateShipping()`.
+   Errors de Dolibarr ja no es filtren al client (missatge genèric + `console.error`).
+3. ✅ **CartProvider.** Feia `if (!hydrated) return children` → sense Provider durant
+   la hidratació → `useCart()` petava. Ara el Provider es renderitza sempre.
+4. ✅ **Enllaç pare–variant.** `options_woodolisync_parent_product` arriba com a string;
+   es comparava amb `=== product.id` (number) i cap variant s'enganxava. Mapper ara fa
+   `Number(...)` i tracta `0`/`""` com a null. Mateix fix a `id`/`fk_parent` de categories.
+5. ✅ **Cache.** El `Map` en memòria (`cache.ts`) no serveix a Vercel (per instància,
+   es perd a cold start) i les server components no en feien servir. Ara
+   `fetchFromDolibarr()` passa `next: { revalidate: CACHE_TTL_SECONDS }` a les GET
+   (cache + dedup al runtime de Next) i `cache: "no-store"` a les escriptures.
+
+Extres: `getProducts()` pagina (abans tall silenciós a 500), `findProductBySlug()`
+com a fallback quan la categoria de la URL no conté el producte, `notFound()` a la
+fitxa de producte, `package-lock.json` es commita (build reproduïble a Vercel),
+codi mort eliminat (`slugToRef`).
+
+**Pendent (no bloquejant):** rate-limiting a `/api/checkout`, dedup de thirdparties
+per email, deduir el `root category id` en lloc de `=== 1` hardcod, unificar estils
+(barreja de tokens i colors hardcoded).
+
+### Pròxims passos per sessió 5 (Fase 3: Pagament CECA)
 
 1. **Contactar CECA** — obtenir credencials sandbox + documentació API
 2. **Endpoint `/api/payment/initiate`** — construir URL TPV amb signatura

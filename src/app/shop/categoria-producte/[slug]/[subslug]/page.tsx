@@ -64,7 +64,7 @@ export default async function SubcategoryPage({
                 borderRadius: "4px",
               }}
             >
-              <Link href={`/productes/${slug}/${product.slug}`}>
+              <Link href={`/productes/${slug}/${subslug}/${product.slug}`}>
                 <h3>{product.label}</h3>
               </Link>
               <p>

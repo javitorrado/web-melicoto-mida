@@ -51,7 +51,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = (newItem: CartItem) => {
     setItems((prev) => {
-      const key = `${newItem.productId}-${newItem.variantLabel || ""}`;
       const existing = prev.find(
         (item) =>
           item.productId === newItem.productId &&
@@ -69,7 +68,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      return [...prev, newItem];
+      return [
+        ...prev,
+        { ...newItem, qty: Math.min(Math.max(1, newItem.qty), newItem.maxStock) },
+      ];
     });
   };
 
@@ -99,8 +101,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([]);
   };
 
-  if (!hydrated) return children;
-
+  // El Provider s'ha de renderitzar SEMPRE (fins i tot abans d'hidratar), o
+  // qualsevol component que cridi useCart() durant el primer render peta.
   return (
     <CartContext.Provider value={{ items, addItem, removeItem, updateQty, clear, subtotal }}>
       {children}

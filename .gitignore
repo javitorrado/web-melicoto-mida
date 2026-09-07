@@ -3,7 +3,7 @@
 /.pnp
 .pnp.js
 /yarn.lock
-/package-lock.json
+# package-lock.json ES commita: cal per builds reproduïbles a Vercel
 
 # testing
 /coverage
@@ -11,6 +11,7 @@
 # next.js
 /.next/
 /out/
+*.tsbuildinfo
 
 # production
 /build
@@ -23,6 +24,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+build.log
+tsc.log
+lint.log
 
 # local env files
 .env
